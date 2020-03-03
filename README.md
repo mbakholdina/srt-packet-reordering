@@ -161,15 +161,18 @@ The idea behid adding `nakreport=0&linger=0` in SRT URL was the following:
 1. nakreport=0 disables periodic NAK report
 
 With the Periodic NAK report enabled the sender always waits for the NAK report from the receiver, and does not attempt retransmissions on its own.
-If the sender sends the very last packet, and it happens to be lost during the transmission, the receiver will not be able to detect this situation. Therefore both sender and receiver will be handing waiting for messages from each other.
+
+If the sender sends the very last packet, and it happens to be lost during the transmission, the receiver will not be able to detect this situation. Therefore both sender and receiver will be hanging waiting for messages from each other.
 
 2. linger=0 disables linger
+
 When linger is enabled, SRT socket will be waiting for delivery of all packets in the sending buffer before closing itself.
 Together with Periodic NAK report enabled behavior in the above case (lost the very last data packet) this will lead to a default hangup for 3 minutes (default linger timeout).
+
 In the latest versions of SRT (roughly v1.4.0+) the default value for linger in live mode is 0 by default.
 
 As of now it is desabled only for `re-receiver` and `re-sender` sub-commands and needs to be tested additionally.
-Once tested, we can disable these options for the other sub=commands as well.
+Once tested, we can disable these options for the other sub-commands as well.
 
 # ToDo
 
