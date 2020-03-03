@@ -16,14 +16,6 @@ PAYLOAD_SIZE = 1316
 MAXIMUM_SEQUENCE_NUMBER = 2 ** 32
 
 
-def get_query(attrs_values: typing.List[typing.Tuple[str, str]]):
-    """ Get query out of the list of attributes-values pairs. """
-    query_elements = []
-    for attr, value in attrs_values:
-        query_elements.append(f'{attr}={value}')
-    return f'{"&".join(query_elements)}'
-
-
 def _nodes_split(ctx, param, value):
     return list(value)
 
@@ -554,7 +546,7 @@ def re_sender(node, duration, n, bitrate, attrs, ll, lf, path):
     # srt-test-live application is fixed
     srt_str = f'srt://*'
     if attrs:
-        srt_str += f'?{get_query(attrs)}'
+        srt_str += f'?{attrs}'
     args = [
         f'{path}',
         'file://con',
@@ -625,7 +617,7 @@ def re_receiver(port, duration, n, bitrate, attrs, ll, lf, path):
     # the URL format for srt-test-live application is fixed
     srt_str = f'srt://:{port}'
     if attrs:
-        srt_str += f'?{get_query(attrs)}'
+        srt_str += f'?{attrs}'
     args = [
         f'{path}',
         srt_str,
