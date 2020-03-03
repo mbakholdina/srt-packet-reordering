@@ -154,9 +154,26 @@ venv/bin/python script_redundancy.py --debug re-sender --node=127.0.0.1:4200 --d
 
 The traffic was measured using `iptraf` tool.
 
+## Note 3 - nakreport=0&linger=0 in SRT URL
+
+The idea behid adding `nakreport=0&linger=0` in SRT URL was the following:
+
+1. nakreport=0 disables periodic NAK report
+
+With the Periodic NAK report enabled the sender always waits for the NAK report from the receiver, and does not attempt retransmissions on its own.
+If the sender sends the very last packet, and it happens to be lost during the transmission, the receiver will not be able to detect this situation. Therefore both sender and receiver will be handing waiting for messages from each other.
+
+2. linger=0 disables linger
+When linger is enabled, SRT socket will be waiting for delivery of all packets in the sending buffer before closing itself.
+Together with Periodic NAK report enabled behavior in the above case (lost the very last data packet) this will lead to a default hangup for 3 minutes (default linger timeout).
+In the latest versions of SRT (roughly v1.4.0+) the default value for linger in live mode is 0 by default.
+
+As of now it is desabled only for `re-receiver` and `re-sender` sub-commands and needs to be tested additionally.
+Once tested, we can disable these options for the other sub=commands as well.
 
 # ToDo
 
+* Remove `nakreport=0&linger=0` from the SRT URL - [issue](https://github.com/mbakholdina/srt-packet-reordering/issues/1),
 * Add passing SRT options through a command line,
 * Add writing stdout, stderr of the processes to files instead of terminal,
 * Instead of printing result dataframe with packets data, print pieces of this dataframe with problem places,

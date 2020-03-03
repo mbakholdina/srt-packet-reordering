@@ -541,7 +541,7 @@ def receiver(port, duration, n, bitrate, attrs, path):
 def re_sender(node, duration, n, bitrate, attrs, ll, lf, path):
     # sender, caller
     # ../srt/srt-ethouris/_build/srt-test-live file://con -g srt://*?type=redundancy 127.0.0.1:4200
-    srt_str = f'srt://*?type=redundancy&nakreport=0&linger=0'
+    srt_str = f'srt://*?type=redundancy'
     if attrs:
         srt_str += f'&{attrs}'
     args = [
@@ -610,7 +610,7 @@ def re_sender(node, duration, n, bitrate, attrs, ll, lf, path):
 def re_receiver(port, duration, n, bitrate, attrs, ll, lf, path):
     # receiver, listener
     # ../srt/srt-ethouris/_build/srt-test-live srt://:4200?groupconnect=true file://con
-    srt_str = f'srt://:{port}?groupconnect=true&nakreport=0&linger=0'
+    srt_str = f'srt://:{port}?groupconnect=true'
     if attrs:
         srt_str += f'&{attrs}'
     args = [
