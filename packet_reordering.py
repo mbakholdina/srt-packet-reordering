@@ -1,6 +1,7 @@
 import datetime as dt
 import logging
 import time
+import typing
 
 import click
 import pandas as pd
