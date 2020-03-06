@@ -87,6 +87,12 @@ def calculate_target_time(interval_us):
     target_time = (dt.datetime.combine(dt.date(1,1,1),now) + delta).time()
     return target_time
 
+
+def print_list(elements):
+    for element in elements:
+        print(element)
+
+
 def start_sender(args, interval_s, k):
     """ 
     Start sender (either srt-live-transmit or srt-test-live application) with
@@ -143,8 +149,11 @@ def start_sender(args, interval_s, k):
         
         logger.info('Collecting sender stdout, stderr')
         stdout, stderr = proc.collect_results()
-        print(f'\nstdout: {stdout}')
-        print(f'stderr: {stderr}\n')
+        print('\nstdout:')
+        print_list(stdout)
+        print('\nstderr:')
+        print_list(stderr)
+        print('\n')
 
 
 def read_data(proc, interval_s):
@@ -361,8 +370,11 @@ def start_receiver(args, interval_s, k):
 
         logger.info('Collecting receiver stdout, stderr')
         stdout, stderr = proc.collect_results()
-        print(f'\nstdout: {stdout}')
-        print(f'stderr: {stderr}\n')
+        print('\nstdout:')
+        print_list(stdout)
+        print('\nstderr:')
+        print_list(stderr)
+        print('\n')
 
         if len(dicts) == 0:
             logger.info('No packets received')
