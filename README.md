@@ -64,7 +64,7 @@ Please use `--help` option in order to get the full list of available options an
 Usage: packet_reordering.py [OPTIONS] COMMAND [ARGS]...
 
 Options:
-  --debug / --no-debug
+  --debug / --no-debug  Activate DEBUG level of script logs
   --help                Show this message and exit.
 
 Commands:
@@ -72,7 +72,6 @@ Commands:
   re-sender
   receiver
   sender
-
 ```
 
 `re-receiver` and `re-sender` sub-commands are designed for Redundancy Feature testing and should be used with `srt-test-live` testing application.
@@ -85,47 +84,118 @@ Please take into consideration that a receiver should be started first, then as 
 ```
 you can start a sender and a transmission via SRT will happen. Note, that both receiver and sender should be started with 1) the same values of n or duration and bitrate, 2) the same attributes. See examples below.
 
-Important to know: Once the transmission is finished, both sender and receiver will be stopped. However there is an opportunity for receiver to hang in case not all the sent packets are received. As of now, use `Ctrl-C` to interrupt the script.
+**Important to know:** Once the transmission is finished, both sender and receiver will be stopped. However there is an opportunity for receiver to hang in case not all the sent packets are received. As of now, use `Ctrl-C` to interrupt the script. See section {{receiver-stop-condition}}.
 
-Important to consider that: 1) receiver mode = listener, sender mode = caller; 2) network impairements should be introduced properly, e.g., if receiver is started at Endpoint A and sender - at Endpoint B, than network impairements like packet reordering, delay, etc. should be introduced at Endpoint B.
+**Important to consider that:** 1) receiver mode = listener, sender mode = caller; 2) network impairements should be introduced properly, e.g., if receiver is started at Endpoint A and sender - at Endpoint B, than network impairements like packet reordering, delay, etc. should be introduced at Endpoint B.
 
 Use `--help` to get the list of available options for a particular sub-command
 ```
 python test_packet_reordering.py re-receiver --help
 ```
+```
+Usage: packet_reordering.py re-receiver [OPTIONS] PATH
 
-## Examples - Redundancy Feature Testing
-
-### Locally
-
-```
-python packet_reordering.py --debug re-receiver --duration 180 --bitrate 10 --attrs "latency=200&sndbuf=125000000&rcvbuf=125000000&fc=60000" ../srt/srt-ethouris/_build/srt-test-live
-```
-```
-python packet_reordering.py --debug re-sender --duration 180 --bitrate 10 --attrs "latency=200&sndbuf=125000000&rcvbuf=125000000&fc=60000" --node 127.0.0.1:4200 ../srt/srt-ethouris/_build/srt-test-live
-```
-
-### On two machines
-
-```
-python packet_reordering.py --debug re-receiver --duration 180 --bitrate 10 --attrs "latency=200&sndbuf=125000000&rcvbuf=125000000&fc=60000" ../srt/srt-ethouris/_build/srt-test-live
-```
-```
-python packet_reordering.py --debug re-sender --duration 180 --bitrate 10 --attrs "latency=200&sndbuf=125000000&rcvbuf=125000000&fc=60000" --node 192.168.2.1:4200 --node 192.168.3.1:4200 ../srt/srt-ethouris/_build/srt-test-live
+Options:
+  --port INTEGER                  Port to listen  [default: 4200]
+  --duration INTEGER              Duration, s  [default: 60]
+  --n INTEGER                     Number of packets
+  --bitrate FLOAT                 Bitrate, Mbit/s
+  --attrs TEXT                    SRT attributes to pass within query. Format:
+                                  "key1=value1&key2=value2"
+  --ll [fatal|error|note|warning|debug]
+                                  Minimum severity for logs
+  --lf PATH                       File to send logs to
+  --help                          Show this message and exit.
 ```
 
-Use `--ll`, `--lf` options to get logs from test-application for the purposes of debugging. In this case, make sure that `srt-test-live` application has been built with `-DENABLE_HEAVY_LOGGING=ON` enabled. Important to know: logs capturing affects the speed of data packets receiving which may result in a pretty big sequence number difference between received and sent packets (more than 1000 when usually it is around 100-200). It also affects the process of data receiving and results in appearance of sequence discontinuities and lost packets. It is expected behaviour and most probably related to the absence of free space in receiving buffer while producing log messages by the protocol. 
+## Script Commands for "Network Bonding" Feature Testing
+
+### Running receiver and sender locally
+
+Start the receiver first. Notice that `attrs` contains `groupconnect=1` as the first attribute-value pair which is network bonding related and application dependent setting. The following attributes like latency `latency`, buffer sizes `sndbuf` and `rcvbuf`, flow control `fc` are SRT related attributes.
+```
+python packet_reordering.py re-receiver --duration 180 --bitrate 10 --attrs "groupconnect=1&latency=200&sndbuf=125000000&rcvbuf=125000000&fc=60000" ../srt-hai-bonding/_build/srt-test-live
+```
+
+Next start the sender. Use the same values of n or duration as well as the same SRT attributes (all the above except `groupconnect=1`). Notice that the first attribute-value pair here is `type=broadcast` which is network bonding related and application dependent setting. It sets the network bondign mode equal to "broadcast".
+``` 
+python packet_reordering.py re-sender --duration 180 --bitrate 10 --attrs "type=broadcast&latency=200&sndbuf=125000000&rcvbuf=125000000&fc=60000" --node 127.0.0.1:4200 ../srt-hai-bonding/_build/srt-test-live
+```
+
+### Running receiver and sender on two machines
+
+Please follow the same steps as described above.
+```
+python packet_reordering.py re-receiver --duration 180 --bitrate 10 --attrs "groupconnect=1&latency=200&sndbuf=125000000&rcvbuf=125000000&fc=60000" ../srt/srt-ethouris/_build/srt-test-live
+```
+```
+python packet_reordering.py re-sender --duration 180 --bitrate 10 --attrs "type=broadcast&latency=200&sndbuf=125000000&rcvbuf=125000000&fc=60000" --node 192.168.2.1:4200 --node 192.168.3.1:4200 ../srt/srt-ethouris/_build/srt-test-live
+```
+
+### Debugging
+
+Use `--ll`, `--lf` options to get logs from test-application for the purposes of debugging. In this case, make sure that `srt-test-live` application has been built with `-DENABLE_HEAVY_LOGGING=ON` enabled.
+
+**Important to know:** logs capturing affects the speed of data packets receiving which may result in a pretty big sequence number difference between received and sent packets (more than 1000 when usually it is around 100-200). It also affects the process of data receiving and results in appearance of sequence discontinuities and lost packets. It is expected behaviour and most probably related to the absence of free space in receiving buffer while producing log messages by the protocol. 
 
 <!-- As of now `stderr` of test application is not captured, so you can see the messages in a terminal as well as script's log messages. In order to capture all these messages to a file add `2>&1 | tee filepath` or `2>filepath` postfix to a command. -->
+
+## Script Output
+
+An example of receiver terminal output is provided below:
+
+```
+Packets Generated (by Sender): 9497
+Packets Received: 9497
+Duplicates: 0
+Packets Reordered: 0
+Sequence Discontinuities: 0, Total Size: 0 packet(s)
+Packets Lost (Generated - Received - Duplicates): 0
+Packets Lost (Total Size of Sequence Discontinuities - Reordered): 0
+Duplicates Ratio: 0.0 %
+Reordered Packets Ratio: 0.0 %
+Lost Packets Ratio (Generated - Received - Duplicates): 0.0 %
+Lost Packets Ratio (Total Size of Sequence Discontinuities - Reordered): 0.0 %
+```
+
+At the same time, the lists of received packets (with duplicates and without duplicates) are saved in `.csv` files in the root folder:
+```
+packets_duplicates.csv
+packets_no_duplicates.csv
+```
+
+## Receiver Stop Condition {#receiver-stop-condition}
+
+Let `k` be a positive integer equal to the number of packets sent. Let `l` be a non-negative integer representing the number of packets that were received out of the `k` packets sent. Note that there is no relationship between `k` and `l`: on one hand, losses can make `l` less than `k`; on the other hand, duplicates can make `l` greater than `k`.
+
+As of now, the stop condition for the receiver is the following: wait for `k` packets being received and then terminate the process. So,
+
+1. If there are packets lost (`l < k`), the receiver will hang trying to receive all generated by the sender packets `k`. In this case, use `CTRL-C` to interrupt the receiver manually.
+
+2. If there are duplicated packets (`l > k`), there is a chance to get and register not all the possible duplicates because the receiver will be stopped once `k` packets are received. Everything else coming after `k` packets will not be received and registered. Some percentage of `k`, let's say 5%, can be introduced to improve this.
 
 
 # Notes
 
-## Note 1 - Receiver Stop Condition
+## Note 1 - nakreport=0&linger=0 in SRT URL
 
-Let `k` be a positive integer equal to the number of packets sent. Let `l` be a non-negative integer representing the number of packets that were received out of the `k` packets sent. Note that there is no relationship between `k` and `l`: on one hand, losses can make `l` less than `k`; on the other hand, duplicates can make `l` greater than `k`.
+The idea behid adding `nakreport=0&linger=0` in SRT URL was the following:
 
-As of now, we will stop the receiver once `k` packets are received, as a result there would be no chance to get all the possible duplicated packets. Some percentage of `k`, let's say 5%, can be introduced to improve this.
+1. nakreport=0 disables periodic NAK report
+
+With the Periodic NAK report enabled the sender always waits for the NAK report from the receiver, and does not attempt retransmissions on its own.
+
+If the sender sends the very last packet, and it happens to be lost during the transmission, the receiver will not be able to detect this situation. Therefore both sender and receiver will be hanging waiting for messages from each other.
+
+2. linger=0 disables linger
+
+When linger is enabled, SRT socket will be waiting for delivery of all packets in the sending buffer before closing itself.
+Together with Periodic NAK report enabled behavior in the above case (lost the very last data packet) this will lead to a default hangup for 3 minutes (default linger timeout).
+
+In the latest versions of SRT (roughly v1.4.0+) the default value for linger in live mode is 0 by default.
+
+As of now it is desabled only for `re-receiver` and `re-sender` sub-commands and needs to be tested additionally.
+Once tested, we can disable these options for the other sub-commands as well.
 
 ## Note 2 - SRT Overhead
 
@@ -154,25 +224,6 @@ venv/bin/python script_redundancy.py --debug re-sender --node=127.0.0.1:4200 --d
 
 The traffic was measured using `iptraf` tool.
 
-## Note 3 - nakreport=0&linger=0 in SRT URL
-
-The idea behid adding `nakreport=0&linger=0` in SRT URL was the following:
-
-1. nakreport=0 disables periodic NAK report
-
-With the Periodic NAK report enabled the sender always waits for the NAK report from the receiver, and does not attempt retransmissions on its own.
-
-If the sender sends the very last packet, and it happens to be lost during the transmission, the receiver will not be able to detect this situation. Therefore both sender and receiver will be hanging waiting for messages from each other.
-
-2. linger=0 disables linger
-
-When linger is enabled, SRT socket will be waiting for delivery of all packets in the sending buffer before closing itself.
-Together with Periodic NAK report enabled behavior in the above case (lost the very last data packet) this will lead to a default hangup for 3 minutes (default linger timeout).
-
-In the latest versions of SRT (roughly v1.4.0+) the default value for linger in live mode is 0 by default.
-
-As of now it is desabled only for `re-receiver` and `re-sender` sub-commands and needs to be tested additionally.
-Once tested, we can disable these options for the other sub-commands as well.
 
 # ToDo
 
