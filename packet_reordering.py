@@ -233,48 +233,37 @@ def calculate_print_metrics(df: pd.DataFrame, k: int):
     duplicates_ratio = round(duplicates * 100 / packets_received, 4)
     seq_discontinuities, total_size = sequence_discontinuities(df)
     # This value can be also calculated as the difference between total
-    # sequence discontinuities size minus packets reordered
+    # sequence discontinuities size minus packets reordered, see below
     packets_lost = k - l
     packets_lost_ratio = round(packets_lost * 100 / k, 4)
     packets_reordered, packets_reordered_ratio = type_p_reordered_ratio_stream(df)
 
-    print(df)
-    print('\n')
-    
-    data_1 = [
-        ('Packets Received', packets_received, ),
-        ('Duplicates', duplicates, duplicates_ratio),
-        ('Packets Reordered', packets_reordered, packets_reordered_ratio),
-        ('Packets Lost', packets_lost, packets_lost_ratio)
-    ]
-    df_stats_1 = pd.DataFrame(data_1, columns = ['Metric', 'Number, packet(s)', 'Ratio, %'])
-    print(df_stats_1)
-    print('\n')
+    packets_lost_2 = total_size - packets_reordered
+    packets_lost_2_ratio = round(packets_lost_2 * 100 / k, 4)
 
-    data_2 = [('Sequence Discontinuities', seq_discontinuities, total_size)]
-    df_stats_2 = pd.DataFrame(data_2, columns = ['Metric', 'Number', 'Total Size, packet(s)'])
-    print(df_stats_2)
-    print('\n')
+    # data_1 = [
+    #     ('Packets Received', packets_received, ),
+    #     ('Duplicates', duplicates, duplicates_ratio),
+    #     ('Packets Reordered', packets_reordered, packets_reordered_ratio),
+    #     ('Packets Lost', packets_lost, packets_lost_ratio)
+    # ]
+    # df_stats_1 = pd.DataFrame(data_1, columns = ['Metric', 'Number, packet(s)', 'Ratio, %'])
 
+    # data_2 = [('Sequence Discontinuities', seq_discontinuities, total_size)]
+    # df_stats_2 = pd.DataFrame(data_2, columns = ['Metric', 'Number', 'Total Size, packet(s)'])
+
+    print(f'Packets Generated (by Sender): {k}')
     print(f'Packets Received: {packets_received}')
     print(f'Duplicates: {duplicates}')
     print(f'Packets Reordered: {packets_reordered}')
-    print(f'Packets Lost: {packets_lost}')
+    print(f'Sequence Discontinuities: {seq_discontinuities}, Total Size: {total_size} packet(s)')
+    print(f'Packets Lost (Generated - Received - Duplicates): {packets_lost}')
+    print(f'Packets Lost (Total Size of Sequence Discontinuities - Reordered): {packets_lost_2}')
     print(f'Duplicates Ratio: {duplicates_ratio} %')
     print(f'Reordered Packets Ratio: {packets_reordered_ratio} %')
-    print(f'Lost Packets Ratio: {packets_lost_ratio} %')
-    print(f'Sequence Discontinuities: {seq_discontinuities}, total size: {total_size} packet(s)')
+    print(f'Lost Packets Ratio (Generated - Received - Duplicates): {packets_lost_ratio} %')
+    print(f'Lost Packets Ratio (Total Size of Sequence Discontinuities - Reordered): {packets_lost_2_ratio} %')
     print('\n')
-
-    # TODO: Does not work on CentOS
-    # logger.info('Writing results to Excel file...')
-    # FILEPATH = 'output.xlsx'
-    # with pd.ExcelWriter(FILEPATH, engine='xlsxwriter') as writer:
-    #     df_duplicates.to_excel(writer, sheet_name='df_duplicates')
-    #     df.to_excel(writer, sheet_name='df_no_duplicates')
-    #     df_stats_1.to_excel(writer, sheet_name='stats_1')
-    #     df_stats_2.to_excel(writer, sheet_name='stats_2')
-    # logger.info('Writing to Excel is finished')
 
     logger.info(
         'Writing results to a set of .csv files: packets_duplicates.csv, '
