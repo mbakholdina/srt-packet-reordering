@@ -129,7 +129,7 @@ def start_sender(args, interval_s, k):
         for s in range(1, k + 1):
             target_time = calculate_target_time(interval_us)
 
-            logger.info(f'Sending packet {s}')
+            logger.debug(f'Sending packet {s}')
             payload_srcByte = insert_srcByte(payload, s)
             proc.process.stdin.write(payload_srcByte)
             proc.process.stdin.flush()
@@ -313,7 +313,7 @@ def start_receiver(args, interval_s, k):
             received_packet = read_data(proc, interval_s)
             src_byte = received_packet[:4]
             s = int.from_bytes(src_byte, byteorder='big')
-            logger.info(f'Received packet {s}')
+            logger.debug(f'Received packet {s}')
             src_byte = src_byte.hex()
             previous_next_exp = next_exp
 
