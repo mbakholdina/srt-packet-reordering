@@ -375,7 +375,11 @@ def start_receiver(args, interval_s, k):
 
 
 @click.group()
-@click.option('--debug/--no-debug', default=False)
+@click.option(
+    '--debug/--no-debug',
+    default=False,
+    help='Activate DEBUG level of script logs'
+)
 def cli(debug):
     if debug:
         logging.basicConfig(
