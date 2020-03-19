@@ -538,7 +538,8 @@ def receiver(port, duration, n, bitrate, attrs, path):
 )
 @click.option(
     '--lfa',
-    help='Enabled functional areas for logs'
+    help='Enabled functional areas for logs, multiple areas can be defined',
+    multiple=True
 )
 @click.option(
     '--lf', 
@@ -566,11 +567,12 @@ def re_sender(node, duration, n, bitrate, attrs, ll, lfa, lf, path):
     args += node
     if lf:
         args += [
-            f'-ll {ll}',
-            f'-lf {lf}',
+            '-ll', ll,
+            '-lf', lf,
         ]
         if lfa:
-            args += [f'-lfa {lfa}']
+            args += ['-lfa']
+            args += lfa
     interval = calculate_interval(bitrate)
     if n is None:
         n = int(duration // interval) + 1
@@ -616,7 +618,8 @@ def re_sender(node, duration, n, bitrate, attrs, ll, lfa, lf, path):
 )
 @click.option(
     '--lfa',
-    help='Enabled functional areas for logs'
+    help='Enabled functional areas for logs, multiple areas can be defined',
+    multiple=True
 )
 @click.option(
     '--lf', 
@@ -642,11 +645,12 @@ def re_receiver(port, duration, n, bitrate, attrs, ll, lfa, lf, path):
     ]
     if lf:
         args += [
-            f'-ll {ll}',
-            f'-lf {lf}',
+            '-ll', ll,
+            '-lf', lf,
         ]
         if lfa:
-            args += [f'-lfa {lfa}']
+            args += ['-lfa']
+            args += lfa
     interval = calculate_interval(bitrate)
     if n is None:
         n = int(duration // interval) + 1

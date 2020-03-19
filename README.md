@@ -115,7 +115,8 @@ Options:
                                   "key1=value1&key2=value2"
   --ll [fatal|error|note|warning|debug]
                                   Minimum severity for logs  [default: debug]
-  --lfa TEXT                      Enabled functional areas for logs
+  --lfa TEXT                      Enabled functional areas for logs, multiple
+                                  areas can be defined
   --lf PATH                       File to send logs to
   --help                          Show this message and exit.
 ```
@@ -148,20 +149,20 @@ python packet_reordering.py re-sender --duration 180 --bitrate 10 --attrs "type=
 
 Use `--ll`, `--lfa`, `--lf` options to get logs from test-application for the purposes of debugging. In this case, make sure that `srt-test-live` application has been built with `-DENABLE_HEAVY_LOGGING=ON` enabled.
 
-`--lfa` option of the application allows to pass one or several values. Use `--lfa ~all` to pass only one value (in this case all the logs will be disabled) or `--lfa "~all cc"` to pass several values (`~all` and `cc` in this case, all the logs will be disabled except `cc` logs). When passing several values, it's important to put them in quotes.
+`--lfa` option of the application allows to pass one or several values. Use `--lfa ~all` to pass only one value (in this case all the logs will be disabled) or `--lfa ~all --lfa cc` to pass several values (`~all` and `cc` in this case, all the logs will be disabled except `cc` logs). When passing several values, it's important to use `--lfa` option multiple times.
 
 **Important to know:** Logs capturing affects the speed of data packets receiving which may result in a pretty big sequence number difference between received and sent packets (more than 1000 when usually it is around 100-200). It also affects the process of data receiving and results in appearance of sequence discontinuities and lost packets. It is expected behaviour and most probably related to the absence of free space in receiving buffer while producing log messages by the protocol.
 
 **Commands examples:**
 ```
-python packet_reordering.py --debug re-receiver --duration 10 --bitrate 10 --attrs "groupconnect=1&latency=200&sndbuf=125000000&rcvbuf=125000000&fc=60000" --lf rcv-logs.txt --lfa "~all cc" ../srt-ethouris/_build/srt-test-live
+python packet_reordering.py --debug re-receiver --duration 10 --bitrate 10 --attrs "groupconnect=1&latency=200&sndbuf=125000000&rcvbuf=125000000&fc=60000" --ll debug --lf rcv-logs.txt --lfa ~all --lfa cc ../srt-ethouris/_build/srt-test-live
 ```
 
 ```
-python packet_reordering.py --debug re-sender --duration 10 --bitrate 10 --attrs "type=broadcast&latency=200&sndbuf=125000000&rcvbuf=125000000&fc=60000" --node 127.0.0.1:4200 --lf snd-logs.txt --lfa "~all cc" ../srt-ethouris/_build/srt-test-live
+python packet_reordering.py --debug re-sender --duration 10 --bitrate 10 --attrs "type=broadcast&latency=200&sndbuf=125000000&rcvbuf=125000000&fc=60000" --node 127.0.0.1:4200 --ll debug --lf snd-logs.txt --lfa ~all --lfa cc ../srt-ethouris/_build/srt-test-live
 ```
 
-Note that `--debug` option is used here to activate the DEBUG level of script logs.
+Note that `--debug` option is used here to activate the DEBUG level of script logs. `--ll debug` may be omitted, because it's default value of `--ll` option.
 
 <!-- As of now `stderr` of test application is not captured, so you can see the messages in a terminal as well as script's log messages. In order to capture all these messages to a file add `2>&1 | tee filepath` or `2>filepath` postfix to a command. -->
 
