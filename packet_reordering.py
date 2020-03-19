@@ -534,6 +534,11 @@ def receiver(port, duration, n, bitrate, attrs, path):
     type=click.Choice(['fatal', 'error', 'note', 'warning', 'debug']), 
     default='debug',
     help='Minimum severity for logs',
+    show_default=True
+)
+@click.option(
+    '--lfa',
+    help='Enabled functional areas for logs'
 )
 @click.option(
     '--lf', 
@@ -544,7 +549,7 @@ def receiver(port, duration, n, bitrate, attrs, path):
     'path', 
     type=click.Path(exists=True)
 )
-def re_sender(node, duration, n, bitrate, attrs, ll, lf, path):
+def re_sender(node, duration, n, bitrate, attrs, ll, lfa, lf, path):
     # sender, caller
     # ../srt/srt-ethouris/_build/srt-test-live file://con -g srt://*?type=redundancy 127.0.0.1:4200
     # TODO: type=redundancy has changed to type=broadcast, test this properly once the URL format for
@@ -564,6 +569,8 @@ def re_sender(node, duration, n, bitrate, attrs, ll, lf, path):
             f'-ll {ll}',
             f'-lf {lf}',
         ]
+        if lfa:
+            args += [f'-lfa {lfa}']
     interval = calculate_interval(bitrate)
     if n is None:
         n = int(duration // interval) + 1
@@ -605,6 +612,11 @@ def re_sender(node, duration, n, bitrate, attrs, ll, lf, path):
     type=click.Choice(['fatal', 'error', 'note', 'warning', 'debug']), 
     default='debug',
     help='Minimum severity for logs',
+    show_default=True
+)
+@click.option(
+    '--lfa',
+    help='Enabled functional areas for logs'
 )
 @click.option(
     '--lf', 
@@ -615,7 +627,7 @@ def re_sender(node, duration, n, bitrate, attrs, ll, lf, path):
     'path', 
     type=click.Path(exists=True)
 )
-def re_receiver(port, duration, n, bitrate, attrs, ll, lf, path):
+def re_receiver(port, duration, n, bitrate, attrs, ll, lfa, lf, path):
     # receiver, listener
     # ../srt/srt-ethouris/_build/srt-test-live srt://:4200?groupconnect=true file://con
     # TODO: groupconnect=true changed to groupconnect=1, test this additionally once
@@ -633,6 +645,8 @@ def re_receiver(port, duration, n, bitrate, attrs, ll, lf, path):
             f'-ll {ll}',
             f'-lf {lf}',
         ]
+        if lfa:
+            args += [f'-lfa {lfa}']
     interval = calculate_interval(bitrate)
     if n is None:
         n = int(duration // interval) + 1

@@ -84,6 +84,17 @@ Please take into consideration that a receiver should be started first, then as 
 ```
 you can start a sender and a transmission via SRT will happen. Note, that both receiver and sender should be started with 1) the same values of n or duration and bitrate, 2) the same attributes. See examples below.
 
+Use `--debug` option to activate the DEBUG level of script logs. In case of sender, it will print all the packets sent to the receiver in real time, e.g.,
+```
+...
+2020-03-19 14:50:30,012 [DEBUG] Sending packet 9455
+2020-03-19 14:50:30,013 [DEBUG] Sending packet 9456
+2020-03-19 14:50:30,014 [DEBUG] Sending packet 9457
+...
+```
+
+In case of receiver, all the packets received.
+
 **Important to know:** Once the transmission is finished, both sender and receiver will be stopped. However there is an opportunity for receiver to hang in case not all the sent packets are received. As of now, use `Ctrl-C` to interrupt the script. See section {{receiver-stop-condition}}.
 
 **Important to consider that:** 1) receiver mode = listener, sender mode = caller; 2) network impairements should be introduced properly, e.g., if receiver is started at Endpoint A and sender - at Endpoint B, than network impairements like packet reordering, delay, etc. should be introduced at Endpoint B.
@@ -103,7 +114,8 @@ Options:
   --attrs TEXT                    SRT attributes to pass within query. Format:
                                   "key1=value1&key2=value2"
   --ll [fatal|error|note|warning|debug]
-                                  Minimum severity for logs
+                                  Minimum severity for logs  [default: debug]
+  --lfa TEXT                      Enabled functional areas for logs
   --lf PATH                       File to send logs to
   --help                          Show this message and exit.
 ```
@@ -134,9 +146,22 @@ python packet_reordering.py re-sender --duration 180 --bitrate 10 --attrs "type=
 
 ### Debugging
 
-Use `--ll`, `--lf` options to get logs from test-application for the purposes of debugging. In this case, make sure that `srt-test-live` application has been built with `-DENABLE_HEAVY_LOGGING=ON` enabled.
+Use `--ll`, `--lfa`, `--lf` options to get logs from test-application for the purposes of debugging. In this case, make sure that `srt-test-live` application has been built with `-DENABLE_HEAVY_LOGGING=ON` enabled.
 
-**Important to know:** logs capturing affects the speed of data packets receiving which may result in a pretty big sequence number difference between received and sent packets (more than 1000 when usually it is around 100-200). It also affects the process of data receiving and results in appearance of sequence discontinuities and lost packets. It is expected behaviour and most probably related to the absence of free space in receiving buffer while producing log messages by the protocol. 
+`--lfa` option of the application allows to pass one or several values. Use `--lfa ~all` to pass only one value (in this case all the logs will be disabled) or `--lfa "~all cc"` to pass several values (`~all` and `cc` in this case, all the logs will be disabled except `cc` logs). When passing several values, it's important to put them in quotes.
+
+**Important to know:** Logs capturing affects the speed of data packets receiving which may result in a pretty big sequence number difference between received and sent packets (more than 1000 when usually it is around 100-200). It also affects the process of data receiving and results in appearance of sequence discontinuities and lost packets. It is expected behaviour and most probably related to the absence of free space in receiving buffer while producing log messages by the protocol.
+
+**Commands examples:**
+```
+python packet_reordering.py --debug re-receiver --duration 10 --bitrate 10 --attrs "groupconnect=1&latency=200&sndbuf=125000000&rcvbuf=125000000&fc=60000" --lf rcv-logs.txt --lfa "~all cc" ../srt-ethouris/_build/srt-test-live
+```
+
+```
+python packet_reordering.py --debug re-sender --duration 10 --bitrate 10 --attrs "type=broadcast&latency=200&sndbuf=125000000&rcvbuf=125000000&fc=60000" --node 127.0.0.1:4200 --lf snd-logs.txt --lfa "~all cc" ../srt-ethouris/_build/srt-test-live
+```
+
+Note that `--debug` option is used here to activate the DEBUG level of script logs.
 
 <!-- As of now `stderr` of test application is not captured, so you can see the messages in a terminal as well as script's log messages. In order to capture all these messages to a file add `2>&1 | tee filepath` or `2>filepath` postfix to a command. -->
 
