@@ -27,9 +27,9 @@ in units of payload bytes (not yet implemented).
 The original idea is coming from the following [PR #663](https://github.com/Haivision/srt/pull/663).
 
 
-# Metrics supported
+## Metrics supported
 
-## Type-P-Reordered-Ratio-Stream
+### Type-P-Reordered-Ratio-Stream
 
 Given a stream of packets sent from a source to a destination, the ratio of reordered packets in the sample is 
 
@@ -44,9 +44,9 @@ Note 1: If duplicate packets (multiple non-corrupt copies) arrive at the destina
 Note 2: Let k be a positive integer equal to the number of packets sent. Let l be a non-negative integer representing the number of packets that were received out of the k packets sent. Note that there is no relationship between k and l: on one hand, losses can make l less than k; on the other hand, duplicates can make l greater than k.
 
 
-# Getting Started
+## Getting Started
 
-## Requirements
+### Requirements
 
 * python 3.6+
 * SRT test application `srt-live-transmit` or `srt-test-live` built on both receiver and sender side
@@ -57,7 +57,7 @@ pip install -r requirements.txt
 ```
 
 
-# Running Script
+## Running Script
 
 Please use `--help` option in order to get the full list of available options and sub-commands.
 ```
@@ -74,9 +74,9 @@ Commands:
   sender
 ```
 
-`re-receiver` and `re-sender` sub-commands are designed for Redundancy Feature testing and should be used with `srt-test-live` testing application.
+`re-receiver` and `re-sender` sub-commands are designed for Connection Bonding testing and should be used with `srt-test-live` testing application.
 
-`receiver` and `sender` sub-commands are designed for the other use caes and should be used with `srt-live-transmit` testing application.
+`receiver` and `sender` sub-commands are designed for the other use cases and should be used with `srt-live-transmit` testing application.
 
 Please take into consideration that a receiver should be started first, then as soon as you get the following message in a terminal
 ```
@@ -121,21 +121,25 @@ Options:
   --help                          Show this message and exit.
 ```
 
-## Script Commands for "Network Bonding" Feature Testing
+where `PATH` is the path to an appropriate testing application.
 
-### Running receiver and sender locally
+### Script Commands for Connection Bonding Testing
 
-Start the receiver first. Notice that `attrs` contains `groupconnect=1` as the first attribute-value pair which is network bonding related and application dependent setting. The following attributes like latency `latency`, buffer sizes `sndbuf` and `rcvbuf`, flow control `fc` are SRT related attributes.
+#### Running receiver and sender locally
+
+Start the receiver first. Notice that `attrs` contains `groupconnect=1` as the first attribute-value pair which is connection bonding related and application dependent setting. The following attributes like latency `latency`, buffer sizes `sndbuf` and `rcvbuf`, flow control `fc` are SRT related attributes.
 ```
 python packet_reordering.py re-receiver --duration 180 --bitrate 10 --attrs "groupconnect=1&latency=200&sndbuf=125000000&rcvbuf=125000000&fc=60000" ../srt-hai-bonding/_build/srt-test-live
 ```
 
-Next start the sender. Use the same values of n or duration as well as the same SRT attributes (all the above except `groupconnect=1`). Notice that the first attribute-value pair here is `type=broadcast` which is network bonding related and application dependent setting. It sets the network bondign mode equal to "broadcast".
+Next start the sender. Use the same values of n or duration as well as the same SRT attributes (all the above except `groupconnect=1`). Notice that the first attribute-value pair here is `type=broadcast` which is connection bonding related and application dependent setting. It sets the connection bonding mode equal to "broadcast".
 ``` 
 python packet_reordering.py re-sender --duration 180 --bitrate 10 --attrs "type=broadcast&latency=200&sndbuf=125000000&rcvbuf=125000000&fc=60000" --node 127.0.0.1:4200 ../srt-hai-bonding/_build/srt-test-live
 ```
 
-### Running receiver and sender on two machines
+For main/backup mode, set `type=backup`.
+
+#### Running receiver and sender on two machines
 
 Please follow the same steps as described above.
 ```
@@ -145,7 +149,7 @@ python packet_reordering.py re-receiver --duration 180 --bitrate 10 --attrs "gro
 python packet_reordering.py re-sender --duration 180 --bitrate 10 --attrs "type=broadcast&latency=200&sndbuf=125000000&rcvbuf=125000000&fc=60000" --node 192.168.2.1:4200 --node 192.168.3.1:4200 ../srt/srt-ethouris/_build/srt-test-live
 ```
 
-### Debugging
+#### Debugging
 
 Use `--ll`, `--lfa`, `--lf` options to get logs from test-application for the purposes of debugging. In this case, make sure that `srt-test-live` application has been built with `-DENABLE_HEAVY_LOGGING=ON` enabled.
 
@@ -166,7 +170,20 @@ Note that `--debug` option is used here to activate the DEBUG level of script lo
 
 <!-- As of now `stderr` of test application is not captured, so you can see the messages in a terminal as well as script's log messages. In order to capture all these messages to a file add `2>&1 | tee filepath` or `2>filepath` postfix to a command. -->
 
-## Script Output
+### Script Commands for Testing with `srt-live-transmit`
+
+The way of using the script with `srt-live-transmit` application is the same as described in Section "Script Commands for Connection Bonding Testing".
+
+Here is an example of commands for testing on localhost:
+
+```
+# Receiver
+python packet_reordering.py receiver --bitrate 1 --attrs "latency=400" ../srt-mbakholdina/_build/srt-live-transmit
+# Sender
+python packet_reordering.py sender --bitrate 1 --attrs "latency=400" ../srt-mbakholdina/_build/srt-live-transmit
+```
+
+### Script Output
 
 An example of receiver terminal output is provided below:
 
@@ -190,7 +207,7 @@ packets_duplicates.csv
 packets_no_duplicates.csv
 ```
 
-## Receiver Stop Condition {#receiver-stop-condition}
+### Receiver Stop Condition {#receiver-stop-condition}
 
 Let `k` be a positive integer equal to the number of packets sent. Let `l` be a non-negative integer representing the number of packets that were received out of the `k` packets sent. Note that there is no relationship between `k` and `l`: on one hand, losses can make `l` less than `k`; on the other hand, duplicates can make `l` greater than `k`.
 
@@ -201,9 +218,9 @@ As of now, the stop condition for the receiver is the following: wait for `k` pa
 2. If there are duplicated packets (`l > k`), there is a chance to get and register not all the possible duplicates because the receiver will be stopped once `k` packets are received. Everything else coming after `k` packets will not be received and registered. Some percentage of `k`, let's say 5%, can be introduced to improve this.
 
 
-# Notes
+## Notes
 
-## Note 1 - nakreport=0&linger=0 in SRT URL
+### Note 1 - nakreport=0&linger=0 in SRT URL
 
 The idea behid adding `nakreport=0&linger=0` in SRT URL was the following:
 
@@ -220,10 +237,9 @@ Together with Periodic NAK report enabled behavior in the above case (lost the v
 
 In the latest versions of SRT (roughly v1.4.0+) the default value for linger in live mode is 0 by default.
 
-As of now it is desabled only for `re-receiver` and `re-sender` sub-commands and needs to be tested additionally.
-Once tested, we can disable these options for the other sub-commands as well.
+These URI options are currently removed for all sub-commands.
 
-## Note 2 - SRT Overhead
+### Note 2 - SRT Overhead
 
 According to measurements performed on a local host, the following overhead was mentioned:
 
@@ -251,9 +267,8 @@ venv/bin/python script_redundancy.py --debug re-sender --node=127.0.0.1:4200 --d
 The traffic was measured using `iptraf` tool.
 
 
-# ToDo
+## ToDo
 
-* Remove `nakreport=0&linger=0` from the SRT URL - [issue](https://github.com/mbakholdina/srt-packet-reordering/issues/1),
 * Add passing SRT options through a command line,
 * Add writing stdout, stderr of the processes to files instead of terminal,
 * Instead of printing result dataframe with packets data, print pieces of this dataframe with problem places,

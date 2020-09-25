@@ -431,9 +431,9 @@ def cli(debug):
     type=click.Path(exists=True)
 )
 def sender(ip, port, duration, n, bitrate, attrs, path):
-    srt_str = f'srt://{ip}:{port}?nakreport=0&linger=0'
+    srt_str = f'srt://{ip}:{port}'
     if attrs:
-        srt_str += f'&{attrs}'
+        srt_str += f'?{attrs}'
     args = [
         f'{path}',
         'file://con',
@@ -482,9 +482,9 @@ def sender(ip, port, duration, n, bitrate, attrs, path):
     type=click.Path(exists=True)
 )
 def receiver(port, duration, n, bitrate, attrs, path):
-    srt_str = f'srt://:{port}?nakreport=0&linger=0'
+    srt_str = f'srt://:{port}'
     if attrs:
-        srt_str += f'&{attrs}'
+        srt_str += f'?{attrs}'
     args = [
         f'{path}',
         srt_str,
