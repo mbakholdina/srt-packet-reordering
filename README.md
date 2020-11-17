@@ -13,7 +13,7 @@ The idea of the script is the following:
 | x | x | x | x | x | x | x | x | 9 |10 |...|...|...|...| 0 |
 +---+---+---+---+---+---+---+---+---+---+---+---+---+   +---+
                                                           |
-          0 byte at the end indicates the end of payload__/        
+          0 byte at the end indicates the end of payload__/
 ```
 where `SrcByte` -- Packet Sequence Number applied at the source,
 in units of payload bytes,
@@ -49,7 +49,12 @@ Note 2: Let k be a positive integer equal to the number of packets sent. Let l b
 ### Requirements
 
 * python 3.6+
-* SRT test application `srt-live-transmit` or `srt-test-live` built on both receiver and sender side
+* SRT `srt-test-live` test application built on both receiver and sender side
+
+**Important:** `srt-live-transmit` test application is not going to be supported by the script. It has an issue related to not flushing data at the end of experiment which were partially fixed in [PR #663](https://github.com/Haivision/srt/pull/663). If this support is required, `sender` and `receiver` subcommands can be used for testing purposes, but:
+- at the very end of experiment receiver will not get all the packets and there would be a need to interrupt it by Ctrl-C;
+- `srt-live-transmit` by default has payload size = 1440 bytes, we need 1316 bytes, but it can be adjusted by means of using appropriate option,
+- it's recommended to adjust buffer size to 1 packet insted of 10 by default.
 
 To install python libraries use:
 ```
@@ -76,7 +81,7 @@ Commands:
 
 `re-receiver` and `re-sender` sub-commands are designed for Connection Bonding testing and should be used with `srt-test-live` testing application.
 
-`receiver` and `sender` sub-commands are designed for the other use cases and should be used with `srt-live-transmit` testing application.
+`receiver` and `sender` sub-commands are designed for the general use cases and should be used with `srt-test-live` testing application. `srt-live-transmit` is supported, but not recommended for usage.
 
 Please take into consideration that a receiver should be started first, then as soon as you get the following message in a terminal
 ```
@@ -95,9 +100,9 @@ Use `--debug` option to activate the DEBUG level of script logs. In case of send
 
 In case of receiver, all the packets received.
 
-**Important to know:** Once the transmission is finished, both sender and receiver will be stopped. However there is an opportunity for receiver to hang in case not all the sent packets are received. As of now, use `Ctrl-C` to interrupt the script. See section {{receiver-stop-condition}}.
+**Important to know:** Once the transmission is finished, both sender and receiver will be stopped. However there is an opportunity for receiver to hang in case not all the sent packets are received. As of now, use `Ctrl-C` to interrupt the script. See section {#receiver-stop-condition}.
 
-**Important to consider that:** 1) receiver mode = listener, sender mode = caller; 2) network impairements should be introduced properly, e.g., if receiver is started at Endpoint A and sender - at Endpoint B, than network impairements like packet reordering, delay, etc. should be introduced at Endpoint B.
+**Important to consider that:** 1) receiver mode = listener, sender mode = caller; 2) network impairements should be introduced properly, e.g., if receiver is started at Endpoint B and sender - at Endpoint A, than network impairements like packet reordering, packet loss, etc., should be introduced at Endpoint A. However it depends on the network impairments scenario. If you would like to introduce packet loss on the way back (from receiver to sender), please setup packet loss on Endpoint B as well.
 
 Use `--help` to get the list of available options for a particular sub-command
 ```
@@ -170,17 +175,17 @@ Note that `--debug` option is used here to activate the DEBUG level of script lo
 
 <!-- As of now `stderr` of test application is not captured, so you can see the messages in a terminal as well as script's log messages. In order to capture all these messages to a file add `2>&1 | tee filepath` or `2>filepath` postfix to a command. -->
 
-### Script Commands for Testing with `srt-live-transmit`
+### Script Commands for General Use Case
 
-The way of using the script with `srt-live-transmit` application is the same as described in Section "Script Commands for Connection Bonding Testing".
+The way of using the script for general use case is the same as described in Section "Script Commands for Connection Bonding Testing".
 
-Here is an example of commands for testing on localhost:
+Here is an example of commands:
 
 ```
 # Receiver
-python packet_reordering.py receiver --bitrate 1 --attrs "latency=400" ../srt-mbakholdina/_build/srt-live-transmit
+python packet_reordering.py receiver --bitrate 1 --attrs "latency=400" ../srt-mbakholdina/_build/srt-test-live
 # Sender
-python packet_reordering.py sender --bitrate 1 --attrs "latency=400" ../srt-mbakholdina/_build/srt-live-transmit
+python packet_reordering.py sender --bitrate 1 --ip 192.168.2.2 --attrs "latency=400" ../srt-mbakholdina/_build/srt-test-live
 ```
 
 ### Script Output
@@ -239,33 +244,6 @@ In the latest versions of SRT (roughly v1.4.0+) the default value for linger in 
 
 These URI options are currently removed for all sub-commands.
 
-### Note 2 - SRT Overhead
-
-According to measurements performed on a local host, the following overhead was mentioned:
-
-| Bitrate, Mbit/s | Overhead, Mbit/s | Overhead, %  |
-|-------------:   |----------------: | -----------: |
-| 1               | 0.125            | 12.5         |
-| 2               | 0.150            | 7.5          |
-| 3               | 0.180            | 6            |
-| 5               | 0.250            | 5            |
-| 7               | 0.300            | 4.3          |
-| 10              | 0.400            | 4            |
-| 20              | 0.650            | 3.25         |
-
-
-Taking into consideration that packet payload size = 1316 bytes, overhead should be approximately 3.19% (28 + 16 = 42 bytes). It would be good to additionally investigate this taking SRT stats and WireShark dumps: might probably, the higher overhead at lower bitrates is related to packet retransmission. According to specification, in case of no retransmission SRT overhead should be greater than 100 kbit/s. 
-
-The measurements were performed using the following commands:
-```
-venv/bin/python script_redundancy.py --debug re-receiver --duration=60 --bitrate=1 ../srt/srt-ethouris/_build/srt-test-live
-```
-```
-venv/bin/python script_redundancy.py --debug re-sender --node=127.0.0.1:4200 --duration=60 --bitrate=1 ../srt/srt-ethouris/_build/srt-test-live
-```
-
-The traffic was measured using `iptraf` tool.
-
 
 ## ToDo
 
@@ -276,5 +254,4 @@ The traffic was measured using `iptraf` tool.
 * Integrate the script in the CI/CD pipeline, [PR #663](https://github.com/Haivision/srt/pull/663) to start with,
 * Implement SrcTime (the time of packet emission from the source) inserted in a packet payload in order to be able to calculate DstTime, Delay, LateTime and other metrics related to sending and receiving packet times as per [RFC 4737 - Packet Reordering Metrics](https://tools.ietf.org/html/rfc4737),
 * Implement n-reordering metric calculation as per [Section 5 of RFC 4737  - Packet Reordering Metrics](https://tools.ietf.org/html/rfc4737#section-5),
-* Improve receiver stop condition in order to introduce some persentage of `k` packets to be able to receive all the possible duplicated packets, where `k` is the number of packets sent by sender,
-* Investigate the case with high overhead at lower bitrates.
+* Improve receiver stop condition in order to introduce some persentage of `k` packets to be able to receive all the possible duplicated packets, where `k` is the number of packets sent by sender.
