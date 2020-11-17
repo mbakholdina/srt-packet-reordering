@@ -298,7 +298,6 @@ def start_receiver(args, interval_s, k):
     # NextExp -- the next expected sequence number at the destination,
     # in units of messages. The stored value in NextExp is determined 
     # from a previously arriving packet.
-    # next_exp = 0
     next_exp = 1
     # List of dictionaries for storing received packets info
     dicts = []
